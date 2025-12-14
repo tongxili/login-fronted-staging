@@ -1,3 +1,10 @@
+/**
+ * Batch History Records Page
+ * This component displays a table of batch history records
+ * Options same as previous Test History Page
+ * Return to BatchedHistoryPage when the back button is clicked
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Button,
@@ -845,7 +852,7 @@ const HistoryPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/auto-test/results');
+    navigate('/auto-test/history');
   };
 
   return (
@@ -861,7 +868,7 @@ const HistoryPage: React.FC = () => {
               Back
             </Button>
             <Title level={3} className='m-0'>
-              Test History Records
+              Batch History Records
             </Title>
           </div>
         </div>

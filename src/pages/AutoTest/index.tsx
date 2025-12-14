@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import UploadPage from './Upload';
 import ResultsPage from './Results';
-import HistoryPage from './History';
+import BatchedHistoryPage from './BatchedHistory';
 import { TestResult } from './Results';
 
 const AutoTest: React.FC = () => {
@@ -56,7 +56,7 @@ const AutoTest: React.FC = () => {
               )
             }
           />
-          <Route path='/history' element={<HistoryPage />} />
+          <Route path='/history' element={<BatchedHistoryPage />} />
           <Route
             path='/*'
             element={<Navigate to='/auto-test/upload' replace />}

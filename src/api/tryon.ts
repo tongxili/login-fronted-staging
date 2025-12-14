@@ -42,6 +42,8 @@ export type TestHistoryItem = {
   generatedResult: string;
   taskId: string;
   status: string;
+  batchId?: string;
+  batchName?: string;
   completedSteps?: number;
   estimatedSteps?: number;
   executionTime: number;
@@ -55,6 +57,21 @@ export type TestHistoryItem = {
   modelId?: string;
 };
 
+export type TestHistoryBatch = {
+  _batchId: string;
+  batchName: string;
+  prompt: string;
+  provider: string;
+  background: string;
+  // items: TestHistoryItem[];
+  // Aggregated metrics
+  totalItems: number;
+  ratedItems: number;
+  averageRating: number;
+  averageTime: number;
+  successRate: number;
+}
+
 export type TestHistoryQuery = {
   queryType: 'all' | 'byFilter';
   taskId?: string;
@@ -67,7 +84,7 @@ export type TestHistoryQuery = {
 
 export type QueryTestHistoryResponse = {
   success: boolean;
-  data: TestHistoryItem[];
+  data: TestHistoryBatch[];
   pagination?: {
     total: number;
     page: number;
@@ -79,7 +96,7 @@ export type QueryTestHistoryResponse = {
   };
 };
 
-export type TestHistoryResponse = {
+export type TestHistoryResponse = { // TODO: check references
   success: boolean;
   data: TestHistoryItem[];
   pagination: {
@@ -194,7 +211,7 @@ export const tryonApi = {
     }
   },
 
-  // 统一查询接口
+  // 统一查询接口 > TODO: return query in batches (backend)
   async queryTestHistory(
     query: TestHistoryQuery
   ): Promise<QueryTestHistoryResponse> {
@@ -210,7 +227,7 @@ export const tryonApi = {
     }
   },
 
-  // 保存测试结果
+  // 保存测试结果 > TODO: save as batches (backend)
   saveTestResults: async (results: TestResult[]): Promise<void> => {
     try {
       // 获取认证 token
@@ -234,7 +251,7 @@ export const tryonApi = {
     }
   },
 
-  // 更新测试结果分数
+  // 更新测试结果分数 > TODO: update item score and batch score (in backend?)
   updateScore: async (
     taskId: string,
     score: number
@@ -263,7 +280,8 @@ export const tryonApi = {
     }
   },
 
-  // 批量删除测试结果
+  // 批量删除测试结果 
+  // TODO: delete task and the task in batch view (backend? useful for all deletion-related ops)
   deleteTestResults: async (
     taskIds: string[]
   ): Promise<{ deletedCount: number; taskIds: string[] }> => {
@@ -317,7 +335,7 @@ export const tryonApi = {
     }
   },
 
-  // 按时间范围获取测试结果
+  // 按时间范围获取测试结果 > TODO: in batch view
   getTestResultsByTimeRange: async (
     startTime: string,
     endTime: string,
