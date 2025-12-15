@@ -21,8 +21,8 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
-import {HistoryPage} from './History';
-import { tryonApi, TestHistoryItem, TestHistoryQuery } from '../../api/tryon';
+// import {HistoryPage} from './History';
+import { tryonApi, TestHistoryItem, TestHistoryQuery, TestHistoryBatch } from '../../api/tryon';
 import { TestResult } from './Results';
 import dayjs from 'dayjs';
 
@@ -50,13 +50,14 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleElement);
 }
 
-// TODO: update table props for batched history
+// table props for batched history: allow rename, no selsection / deletion
 interface BatchedHistoryTableProps {
-  testResults: TestResult[];
-  selectedRowKeys: React.Key[];
-  onSelectChange: (newSelectedRowKeys: React.Key[]) => void;
-  onScoreUpdate?: (taskId: string, score: number) => void;
-  onDeleteSelected?: (taskIds?: string[]) => Promise<void>;
+  batchedtestResults: TestHistoryBatch[];
+  onNameUpdate?: (batchId: string, newName: string) => void;
+//   selectedRowKeys: React.Key[];
+//   onSelectChange: (newSelectedRowKeys: React.Key[]) => void;
+//   onScoreUpdate?: (taskId: string, score: number) => void;
+//   onDeleteSelected?: (taskIds?: string[]) => Promise<void>;
   pagination?: {
     current: number;
     pageSize: number;
@@ -72,21 +73,137 @@ interface BatchedHistoryTableProps {
   onTableChange?: (...args: unknown[]) => void;
 }
 
-// TODO: define a history table layout
-// with operations(select, rename, delete(?), etc.)
+// ADD: define a history table layout
+// with rename operations
 const BatchedHistoryTable: React.FC<BatchedHistoryTableProps> = ({
-  testResults,
-  selectedRowKeys,
-  onSelectChange,
-  onScoreUpdate,
-  onDeleteSelected,
+  batchedtestResults,
+  onNameUpdate,
+//   selectedRowKeys,
+//   onSelectChange,
+//   onScoreUpdate,
+//   onDeleteSelected,
   pagination,
   onTableChange,
-}) => {};
+}) => {
+    // change batch name
+    const [editingBatch, setEditingBatch] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState<string>('');
+
+    const handleNameUpdate = (batch: TestHistoryBatch) => {
+        setEditingBatch(batch._batchId);
+        setEditingName(batch.batchName);
+    };
+
+    const handleNameSave = async (batchId: string) => {
+        if (onNameUpdate) {
+            await onNameUpdate(batchId, editingName);
+        }
+        setEditingBatch(null);
+        setEditingName('');
+    };
+
+    const handleNameCancel = () => {
+        setEditingBatch(null);
+        setEditingName('');
+    };
+
+    // Jump to detailed result page
+    const navigate = useNavigate();
+    const handleViewBatch = (batchId: string) => {
+        navigate(`/auto-test/history/${batchId}`);
+    }
+
+    // batch card template
+    const BatchCard: React.FC<{ data: TestHistoryBatch; onNameUpdate?: (batchId: string, newName: string) => void }> = ({ data, onNameUpdate }) => {
+    return (
+        <div className="batch-card">
+            <div className="batch-header">
+                <div>
+                    {editingBatch === data._batchId ? (
+                        <div className="flex items-center gap-2">
+                            <Input
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onPressEnter={() => handleNameSave(data._batchId)}
+                                autoFocus
+                            />
+                            <Button size="small" onClick={() => handleNameSave(data._batchId)}>
+                                Save
+                            </Button>
+                            <Button size="small" onClick={handleNameCancel}>
+                                Cancel
+                            </Button>
+                        </div>
+                    ) : (
+                        <h3 onClick={() => handleNameUpdate(data)} style={{ cursor: 'pointer' }}>
+                            {data.batchName}
+                        </h3>
+                    )}
+                    <span>{data.totalItems} Items</span>
+                </div>
+
+                <a className="view-prompt"
+                onClick={() => {
+                    Modal.info({
+                        title: 'Batch Prompt',
+                        content: (
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                                    {data.prompt}
+                                </pre>
+                            </div>
+                        ),
+                        width: 600,
+                        okText: 'Close',
+                    });
+                }}>View Prompt →</a>
+
+                <button className="view-results" onClick={() => handleViewBatch(data._batchId)}>View Results →</button>
+            </div>
+
+            <hr />
+
+            <div className="batch-body">
+                <span className="label">Prompt</span>
+                <span className="prompt-text">{data.prompt}</span>
+                <span className="provider">{data.provider}</span>
+            </div>
+
+            <div className="batch-footer">
+                <span>⭐ Avg Rating: {data.averageRating}</span>
+                <span>Avg Time: {data.averageTime}s</span>
+            </div>
+        </div>
+    );
+    };
+
+    const columns = [
+        {
+            title: "",
+            dataIndex: "batchId",
+            key: "batchId",
+            render: (record: TestHistoryBatch) => <BatchCard data={record} onNameUpdate={onNameUpdate} />,
+        },
+    ];
+
+    return (
+    <div className='bg-white rounded-lg shadow-md p-6'>
+        <Table
+        columns={columns}
+        dataSource={batchedtestResults}
+        pagination={pagination}
+        rowKey='key'
+        className='batched-test-results-table'
+        onChange={onTableChange}
+        />
+
+    </div>
+    );
+};
 
 // Batched History Page
 const BatchedHistoryPage: React.FC = () => {
-    const [TestResult, setBatchedTestResults] = useState<TestResult[]>([]);
+    const [batchedtestResults, setBatchedTestResults] = useState<TestHistoryBatch[]>([]);
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -100,9 +217,103 @@ const BatchedHistoryPage: React.FC = () => {
     );
     const [isFiltered, setIsFiltered] = useState(false);
     const [isStatModalVisible, setIsStatModalVisible] = useState(false);
+    const [averages, setAverages] = useState({
+        avgTime: '0.00',
+        minTime: '0.00',
+        maxTime: '0.00',
+        avgScore: '0.00',
+        minScore: '0.00',
+        maxScore: '0.00',
+        successCount: 0,
+        scoreCount: 0,
+    });
     const navigate = useNavigate();
     const handleBack = () => {
         navigate('/auto-test/results');
+    };
+
+    // Fetch batched test results
+    const fetchBatches = async () => {
+        try {
+            setLoading(true);
+            const query: TestHistoryQuery = {
+                // TODO: backend, return a batched data
+                queryType: 'batch',
+                page: currentPage,
+                limit: pageSize,
+            };
+
+            if (isFiltered) {
+                if (searchTaskId) query.taskId = searchTaskId;
+                if (searchModelId) query.modelId = searchModelId;
+                if (timeRange) {
+                    query.startTime = timeRange[0].toISOString();
+                    query.endTime = timeRange[1].toISOString();
+                }
+            }
+
+            const response = await tryonApi.queryTestHistory(query);
+            setBatchedTestResults(response.data || []);
+            setTotal(response.total || 0);
+        } catch (error) {
+            console.error('Failed to fetch batches:', error);
+            message.error('Failed to load batch history');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load data on mount and when filters change
+    useEffect(() => {
+        fetchBatches();
+    }, [currentPage, pageSize, isFiltered]);
+
+    // Handle batch name update
+    const handleNameUpdate = async (batchId: string, newName: string) => {
+        try {
+            // TODO: Add API call to update batch name when backend supports it
+            // await tryonApi.updateBatchName(batchId, newName);
+            
+            // Optimistically update the local state
+            setBatchedTestResults(prev => 
+                prev.map(batch => 
+                    batch._batchId === batchId 
+                        ? { ...batch, batchName: newName }
+                        : batch
+                )
+            );
+            message.success('Batch name updated successfully');
+        } catch (error) {
+            console.error('Failed to update batch name:', error);
+            message.error('Failed to update batch name');
+            // Refresh to get the correct data if update fails
+            fetchBatches();
+        }
+    };
+
+    // Calculate statistics
+    const calculateAverages = () => {
+        if (batchedtestResults.length === 0) {
+            message.warning('No data available for statistics');
+            return;
+        }
+
+        const avgTime = batchedtestResults.reduce((sum, batch) => sum + (batch.averageTime || 0), 0) / batchedtestResults.length;
+        const avgRating = batchedtestResults.reduce((sum, batch) => sum + (batch.averageRating || 0), 0) / batchedtestResults.length;
+        const totalItems = batchedtestResults.reduce((sum, batch) => sum + (batch.totalItems || 0), 0);
+        const totalRated = batchedtestResults.reduce((sum, batch) => sum + (batch.ratedItems || 0), 0);
+
+        setAverages({
+            avgTime: avgTime.toFixed(2),
+            minTime: Math.min(...batchedtestResults.map(b => b.averageTime || 0)).toFixed(2),
+            maxTime: Math.max(...batchedtestResults.map(b => b.averageTime || 0)).toFixed(2),
+            avgScore: avgRating.toFixed(2),
+            minScore: Math.min(...batchedtestResults.map(b => b.averageRating || 0)).toFixed(2),
+            maxScore: Math.max(...batchedtestResults.map(b => b.averageRating || 0)).toFixed(2),
+            successCount: totalItems,
+            scoreCount: totalRated,
+        });
+        setIsStatModalVisible(true);
     };
     
     // Page layout
@@ -125,7 +336,7 @@ const BatchedHistoryPage: React.FC = () => {
         </div>
 
         {/* Search */}
-        {/* TODO: search batch function */}
+        {/* TODO: search batch function (later) */}
         <Card className='mb-6'>
             <div className='flex flex-col gap-4'>
             {/* First line: filter */}
@@ -138,7 +349,7 @@ const BatchedHistoryPage: React.FC = () => {
                     placeholder='Please enter batchId'
                     value={searchTaskId}
                     onChange={(e) => setSearchTaskId(e.target.value)}
-                    onPressEnter={handleFilterSearch}
+                    // onPressEnter={handleFilterSearch}
                     className='!rounded-button'
                 />
                 </div>
@@ -150,7 +361,7 @@ const BatchedHistoryPage: React.FC = () => {
                     placeholder='Please enter modelId'
                     value={searchModelId}
                     onChange={(e) => setSearchModelId(e.target.value)}
-                    onPressEnter={handleFilterSearch}
+                    // onPressEnter={handleFilterSearch}
                     className='!rounded-button'
                 />
                 </div>
@@ -160,7 +371,7 @@ const BatchedHistoryPage: React.FC = () => {
                 </Text>
                 <RangePicker
                     value={timeRange}
-                    onChange={handleTimeRangeChange}
+                    // onChange={handleTimeRangeChange}
                     showTime
                     format='YYYY-MM-DD HH:mm:ss'
                     placeholder={['Start Time', 'End Time']}
@@ -201,20 +412,20 @@ const BatchedHistoryPage: React.FC = () => {
             </div>
         </Card>
 
-        {/* TODO: update contents to be filled into batched history table */}
+        {/* update contents to be filled into batched history table */}
         <div className='flex gap-6'>
             <div className='flex-grow'>
             <BatchedHistoryTable
-                testResults={testResults}
-                selectedRowKeys={selectedRowKeys}
-                onSelectChange={setSelectedRowKeys}
-                onScoreUpdate={handleScoreUpdate}
-                onDeleteSelected={handleDeleteSelected}
+                batchedtestResults={batchedtestResults as TestHistoryBatch[]}
+                onNameUpdate={handleNameUpdate}
                 pagination={{
                 current: currentPage,
                 pageSize: pageSize,
                 total: total,
-                onChange: handlePageChange,
+                onChange: (page, pageSize) => {
+                    setCurrentPage(page);
+                    setPageSize(pageSize);
+                },
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>
@@ -223,9 +434,18 @@ const BatchedHistoryPage: React.FC = () => {
                 hideOnSinglePage: false,
                 onShowSizeChange: (current, size) => {
                     console.log('Page size changed:', { current, size });
+                    setCurrentPage(current);
+                    setPageSize(size);
                 },
                 }}
-                onTableChange={handleTableChange}
+                onTableChange={(pagination: any) => {
+                    if (pagination?.current) {
+                        setCurrentPage(pagination.current);
+                    }
+                    if (pagination?.pageSize) {
+                        setPageSize(pagination.pageSize);
+                    }
+                }}
             />
             {loading && (
                 <div className='text-center py-4'>
@@ -236,7 +456,7 @@ const BatchedHistoryPage: React.FC = () => {
         </div>
         </div>
         
-        {/* TODO: update statistics contents */}
+        {/* update statistics contents */}
         <Modal
         title='Current List Data Statistics'
         open={isStatModalVisible}

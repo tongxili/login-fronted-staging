@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import UploadPage from './Upload';
 import ResultsPage from './Results';
 import BatchedHistoryPage from './BatchedHistory';
+import HistoryPage from './History';
 import { TestResult } from './Results';
 
 const AutoTest: React.FC = () => {
@@ -57,6 +58,7 @@ const AutoTest: React.FC = () => {
             }
           />
           <Route path='/history' element={<BatchedHistoryPage />} />
+          <Route path="/auto-test/history/:batchId?" element={<HistoryPage />} />
           <Route
             path='/*'
             element={<Navigate to='/auto-test/upload' replace />}

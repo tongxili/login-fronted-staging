@@ -104,6 +104,7 @@ import { useNavigate } from 'react-router-dom';
 import { tryonApi, TestHistoryItem, TestHistoryQuery } from '../../api/tryon';
 import { TestResult } from './Results';
 import dayjs from 'dayjs';
+import { useParams } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -490,6 +491,8 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
 };
 
 const HistoryPage: React.FC = () => {
+  const {batchId} = useParams<{ batchId?: string }>();
+
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [loading, setLoading] = useState(false);
@@ -585,8 +588,63 @@ const HistoryPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTestHistory(1, 10);
-  }, []);
+    if(batchId){
+      // fetch by batchId
+      fetchBatchHistory(batchId);
+    } else {
+      fetchTestHistory(1, 10);
+    }
+  }, [batchId]);
+  
+  // fetch by batchId
+  const fetchBatchHistory = async (batchId: string, page?: number, limit?: number) => {
+    if (isRequesting.current) {
+      return;
+    }
+    isRequesting.current = true;
+    setLoading(true);
+    try {
+      const response = await tryonApi.queryTestHistory({
+        queryType: 'byBatchId', // TODO: check backend/ test data if having this
+        batchId: batchId,
+        page: 1 || page,
+        limit: limit || pageSize,
+      });
+      const formattedResults = response.data.map(
+        (result: TestHistoryItem, index: number) => ({
+          key: result._id || index.toString(),
+          userImage: result.userImage,
+          clothingImage: result.clothingImage,
+          generatedResult: result.generatedResult,
+          taskId: result.taskId,
+          status: result.status,
+          executionTime: result.executionTime,
+          error: result.error || undefined,
+          score: result.score,
+          savedAt: result.savedAt,
+          modelId: result.modelId,
+        })
+      );
+
+      setTestResults(formattedResults);
+      if (response.pagination) {
+        const correctTotal =
+          response.pagination.totalPages * response.pagination.limit;
+        setTotal(correctTotal);
+        setCurrentPage(response.pagination.page);
+        setPageSize(response.pagination.limit);
+      }
+    } catch (error) {
+      const e = error as Error;
+      console.error('Failed to fetch batch history:', e);
+      message.error(`Failed to fetch batch history: ${e.message}`);
+    } finally {
+      setLoading(false);
+      isRequesting.current = false;
+    }
+      
+  };
+
 
   const fetchTestHistory = async (page?: number, limit?: number) => {
     if (isRequesting.current) {
