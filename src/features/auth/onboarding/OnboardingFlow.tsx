@@ -110,6 +110,7 @@ export const OnboardingFlow: React.FC = () => {
   const headerNextHandler =
   step === "DoneStep" ? undefined : nextHandler;
 
+  const isChatbotPage = step === "chatbot";
   return (
     <main className="min-h-screen">
       <OnboardingHeader
@@ -124,7 +125,16 @@ export const OnboardingFlow: React.FC = () => {
     scrollToOnboardingTop();}}
       />
 
-      <section className="flex min-h-[60vh] md:min-h-[75vh] items-start md:items-center justify-center">
+      <section className={[
+    "flex min-h-[60vh] md:min-h-[75vh] items-start md:items-center justify-center",
+    isChatbotPage ? "" : "",
+  ].join(" ")}
+  style={
+    isChatbotPage
+      ? { background: "linear-gradient(180deg, #FFFFFF 0%, #6A5ACD 100%)" }
+      : undefined
+  }>
+
         <div className="w-full max-w-[1240px] transition-all duration-300">
           {step === "pinToolbar" && (
             <PinToolbarStep onNext={() => setStep("chooseViewer")} onBack={()=>setStep("DoneStep")}/>

@@ -9,48 +9,84 @@ interface ChatbotStepProps {
 const QuoteBubble: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div
     className="
-       rounded-[999px]
+      rounded-[8px]
       bg-white
       border border-black/5
       shadow-[0_4px_8px_rgba(0,0,0,0.08)]
-      px-4 py-2
-      text-[12px] sm:text-[13px]
-      text-left text-[#111827]
+      p-[8px]
+      text-[14px] sm:text-[13px]
+      text-center text-[#111827]
+      font-semibold
     "
   >
     {children}
   </div>
 );
 
-const QuoteWithArrow: React.FC<{
+const CurlyConnector: React.FC<{ side: "left" | "right" }> = ({ side }) => {
+  // stroke-only SVG so it matches the screenshot
+  return (
+    <svg
+      viewBox="0 0 120 70"
+      className={[
+        "w-[72px] h-[44px] md:w-[92px] md:h-[54px] lg:w-[110px] lg:h-[60px]",
+        side === "right" ? "rotate-0" : "scale-x-[-1]",
+      ].join(" ")}
+      fill="none"
+    >
+      <path
+        d="M10 10
+           C 55 10, 55 35, 25 35
+           C 5 35, 5 60, 35 60
+           C 70 60, 70 35, 105 35"
+        stroke="white"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M105 35 L92 28 M105 35 L92 42"
+        stroke="white"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* arrow head */}
+    </svg>
+  );
+};
+
+
+const QuoteRow: React.FC<{
   side: "left" | "right";
   children: React.ReactNode;
-}> = ({ side, children }) => (
-  <div className="flex items-center gap-2">
-    {side === "right" && <QuoteBubble>{children}</QuoteBubble>}
+}> = ({ side, children }) => {
+  const isLeft = side === "left";
 
-    {/* Placeholder arrow – swap img src with your real asset */}
-    <div
-      className={`
-        w-8 md:w-10 h-8 md:h-10
-        ${side === "left" ? "order-first" : "order-last"}
-      `}
-    >
-      {/* Example using borders as a simple curved-ish arrow.
-          Replace with an <img src={leftArrow} /> / <img src={rightArrow} /> */}
-      <div
-        className={`
-          w-full h-full border-[2px] border-white
-          border-l-transparent border-b-transparent
-          rounded-full
-          ${side === "left" ? "rotate-[135deg]" : "-rotate-[45deg]"}
-        `}
-      />
+
+   return (
+    <div className={["flex items-center", isLeft ? "justify-end" : "justify-start"].join(" ")}>
+      {isLeft ? (
+        <>
+          <div className="ml-3 md:ml-4">
+            <CurlyConnector side="left" />
+          </div>
+          <QuoteBubble>{children}</QuoteBubble>
+        </>
+      ) : (
+        <>
+         
+          <QuoteBubble>{children}</QuoteBubble>
+          <div className="mr-3 md:mr-4">
+            <CurlyConnector side="right" />
+          </div>
+        </>
+      )}
     </div>
+  );
+};
 
-    {side === "left" && <QuoteBubble>{children}</QuoteBubble>}
-  </div>
-);
+
 
 
 export const ChatbotStep: React.FC<ChatbotStepProps> = () => {
@@ -68,23 +104,23 @@ export const ChatbotStep: React.FC<ChatbotStepProps> = () => {
   </div>
 
        
-               <div className="mt-8 w-full flex justify-center">
-          <div className="flex items-center gap-6 md:gap-8 lg:gap-10">
+               <div className="mt-10 w-full flex justify-center">
+          <div className="w-full max-w-[1200px] flex items-center justify-between px-6 lg:px-10">
             {/* LEFT QUOTES – hidden on small screens */}
-            <div className="hidden md:flex flex-col gap-4 max-w-[260px]">
-              <QuoteWithArrow side="right">
+            <div className="hidden md:flex flex-col gap-10 w-[320px] font-bold">
+              <QuoteRow  side="right">
                 Find sporty outfits with white sneakers 👟
-              </QuoteWithArrow>
-              <QuoteWithArrow side="right">
-                Style a satin midi dress 🧵
-              </QuoteWithArrow>
-              <QuoteWithArrow side="right">
-                Outfits for all-black look 🖤
-              </QuoteWithArrow>
+              </QuoteRow >
+              <QuoteRow  side="right">
+                Style a satin midi dress 👗
+              </QuoteRow >
+              <QuoteRow  side="right">
+                Outfits for all-black look
+              </QuoteRow >
             </div>
 
             {/* ORIGINAL VIDEO CARD – unchanged */}
-            <div className="flex justify-center">
+            <div className="flex justify-center flex-1">
               <div
                 className="
                   w-full
@@ -112,16 +148,16 @@ export const ChatbotStep: React.FC<ChatbotStepProps> = () => {
             </div>
 
             {/* RIGHT QUOTES – hidden on small screens */}
-            <div className="hidden md:flex flex-col gap-4 max-w-[250px]">
-              <QuoteWithArrow side="left">
-                Outfits for job interviews 💼
-              </QuoteWithArrow>
-              <QuoteWithArrow side="left">
-                Make outfits with Aritzia Effortless Pants 👖
-              </QuoteWithArrow>
-              <QuoteWithArrow side="left">
-                Make a Y2K inspired outfit ✨
-              </QuoteWithArrow>
+            <div className="hidden md:flex flex-col gap-10 w-[320px] font-bold">
+              <QuoteRow side="left">
+                Outfits for job interviews
+              </QuoteRow>
+              <QuoteRow side="left">
+                Make outfits with Aritzia Effortless Pants
+              </QuoteRow>
+              <QuoteRow side="left">
+                Make a y2k inspired outfit
+              </QuoteRow>
             </div>
           </div>
         </div>

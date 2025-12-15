@@ -30,6 +30,8 @@ interface HowItWorksStepProps {
   onReachBottom?: (atBottom: boolean) => void;
 }
 
+
+
 const HOW_IT_WORKS_STEPS = [
   {
     id: 1,
@@ -67,38 +69,59 @@ export const HowItWorksStep: React.FC<HowItWorksStepProps> = ({
   onReachBottom,
 }) => {
   const total = HOW_IT_WORKS_STEPS.length;
-
+  const isScrollingRef = useRef(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Scroll triggers: which step is active based on scroll
   useEffect(() => {
-    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
-      return;
-    }
+  const el = rootRef.current;
+  if (!el) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const idx = Number(
-            (entry.target as HTMLDivElement).dataset.index ?? -1
-          );
-          if (idx < 0) return;
-          if (entry.isIntersecting) {
-            setActiveIndex(idx);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
+  const onWheel = (e: WheelEvent) => {
+    e.preventDefault();
 
-    triggerRefs.current.forEach((el) => {
-      if (el) observer.observe(el);
+    if (isScrollingRef.current) return;
+
+    isScrollingRef.current = true;
+
+    setActiveIndex((prev) => {
+      if (e.deltaY > 0) {
+        return Math.min(prev + 1, total - 1);
+      } else {
+        return Math.max(prev - 1, 0);
+      }
     });
 
-    return () => observer.disconnect();
-  }, []);
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 700); 
+  };
+
+  el.addEventListener("wheel", onWheel, { passive: false });
+
+  return () => {
+    el.removeEventListener("wheel", onWheel);
+  };
+}, [total]);
+
+
+useEffect(() => {
+  const onKey = (e: KeyboardEvent) => {
+    if (isScrollingRef.current) return;
+
+    if (e.key === "ArrowDown") {
+      setActiveIndex((i) => Math.min(i + 1, total - 1));
+    }
+    if (e.key === "ArrowUp") {
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    }
+  };
+
+  window.addEventListener("keydown", onKey);
+  return () => window.removeEventListener("keydown", onKey);
+}, [total]);
+
 
   // Notify parent when user reaches bottom of section
   useEffect(() => {
