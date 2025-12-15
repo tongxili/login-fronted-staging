@@ -369,10 +369,12 @@ const SignUp: React.FC = () => {
   return (
     <>
       <OnboardingHeader />
-      <main className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4">
-        <div className="flex w-full max-w-[1177px] flex-col md:flex-row items-stretch gap-8 lg:gap-[137px]">
+      <main className="h-[calc(100vh-52px)] overflow-hidden px-0">
+        <div className="w-full h-full flex flex-col lg:flex-row items-stretch gap-0">
           {/* LEFT SIDE: form */}
-          <div className="w-full md:max-w-[470px] bg-white rounded-[24px] border-[2px] border-[#D9D9D9] overflow-hidden flex">
+
+          <div className="w-full lg:w-3/5 h-full flex items-center justify-center">
+          <div className="w-full max-w-[470px] bg-white rounded-[24px] border-[2px] border-[#D9D9D9] overflow-hidden flex">
             <div className="p-6 md:p-8 lg:p-10 flex flex-col w-full h-full justify-center">
               <div className="w-full max-w-full md:max-w-[90%] mx-auto">
                 {/* Title */}
@@ -529,23 +531,24 @@ const SignUp: React.FC = () => {
               </div>
             </div>
           </div>
+          </div>
 
           {/* RIGHT SIDE: video */}
-          <div className="hidden md:flex flex-1 items-center justify-center">
-            <div className="w-full md:max-w-[470px]">
-              <div className="w-full aspect-[607/777] rounded-[24px] overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.25)]">
-                <video
-                  src={signupVideo}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
+<div className="hidden lg:block lg:w-2/5 h-full">
+  <div className="w-full h-full overflow-hidden">
+    <video
+      src={signupVideo}
+      autoPlay
+      loop
+      muted
+      playsInline
+      className="w-full h-full object-cover"
+    />
+  </div>
+</div>
+
         </div>
+      
       </main>
     </>
   );

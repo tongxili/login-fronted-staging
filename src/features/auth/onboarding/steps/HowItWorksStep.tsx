@@ -75,6 +75,12 @@ export const HowItWorksStep: React.FC<HowItWorksStepProps> = ({
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
+  if (!onReachBottom) return;
+  onReachBottom(activeIndex === total - 1);
+}, [activeIndex, total, onReachBottom]);
+
+
+  useEffect(() => {
   const el = rootRef.current;
   if (!el) return;
 
@@ -123,28 +129,7 @@ useEffect(() => {
 }, [total]);
 
 
-  // Notify parent when user reaches bottom of section
-  useEffect(() => {
-    if (!onReachBottom) return;
 
-    const checkBottom = () => {
-      const el = rootRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const thresholdPx = 8;
-      const atBottom = rect.bottom <= window.innerHeight + thresholdPx;
-      onReachBottom(atBottom);
-    };
-
-    checkBottom();
-    window.addEventListener("scroll", checkBottom, { passive: true });
-    window.addEventListener("resize", checkBottom);
-
-    return () => {
-      window.removeEventListener("scroll", checkBottom);
-      window.removeEventListener("resize", checkBottom);
-    };
-  }, [onReachBottom]);
 
   const activeStep = HOW_IT_WORKS_STEPS[activeIndex];
 
@@ -276,11 +261,13 @@ useEffect(() => {
                     }`}
 
                      onClick={() => {
-        const targetEl = triggerRefs.current[i];
-        if (targetEl) {
-          targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }}
+  if (isScrollingRef.current) return;
+  isScrollingRef.current = true;
+  setActiveIndex(i);
+  setTimeout(() => {
+    isScrollingRef.current = false;
+  }, 600);
+}}
                   />
                 ))}
               </div>

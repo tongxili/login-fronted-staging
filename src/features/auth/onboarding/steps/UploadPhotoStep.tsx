@@ -240,7 +240,7 @@ export const UploadPhotoStep: React.FC<UploadPhotoStepProps> = () => {
                 <button
                   type="button"
                   onClick={handleBrowseClick}
-                  disabled={isUploading} // ✅ CHANGE: disable while uploading
+                  disabled={isUploading}
                   className={`
                     inline-flex items-center justify-center
                     rounded-[16px] bg-[#6A5ACD]
@@ -277,10 +277,6 @@ export const UploadPhotoStep: React.FC<UploadPhotoStepProps> = () => {
               </div>
             </div>
 
-            {/* ✅ OPTIONAL: small helper text */}
-            <p className="mt-3 text-[12px] text-[#6A7282]">
-              Tip: If you upload a new photo, it will replace the previous one in the extension.
-            </p>
           </div>
         </div>
       </div>
