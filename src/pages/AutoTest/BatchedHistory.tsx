@@ -22,7 +22,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
 // import {HistoryPage} from './History';
-import { tryonApi, TestHistoryItem, TestHistoryQuery, TestHistoryBatch } from '../../api/tryon';
+import { tryonApi, TestHistoryItem, BatchedTestHistoryQuery, TestHistoryBatch } from '../../api/tryon';
 import { TestResult } from './Results';
 import dayjs from 'dayjs';
 
@@ -236,13 +236,13 @@ const BatchedHistoryPage: React.FC = () => {
     const fetchBatches = async () => {
         try {
             setLoading(true);
-            const query: TestHistoryQuery = {
-                // TODO: backend, return a batched data
-                queryType: 'batch',
+            // TODO: a query for all batches
+            const query: BatchedTestHistoryQuery = {
+                queryType: 'all',
                 page: currentPage,
                 limit: pageSize,
             };
-
+            // TODO: filter feature for batches
             if (isFiltered) {
                 if (searchTaskId) query.taskId = searchTaskId;
                 if (searchModelId) query.modelId = searchModelId;
@@ -252,7 +252,7 @@ const BatchedHistoryPage: React.FC = () => {
                 }
             }
 
-            const response = await tryonApi.queryTestHistory(query);
+            const response = await tryonApi.queryTestBatchHistory(query);
             setBatchedTestResults(response.data || []);
             setTotal(response.total || 0);
         } catch (error) {

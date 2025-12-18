@@ -605,7 +605,7 @@ const HistoryPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await tryonApi.queryTestHistory({
-        queryType: 'byBatchId', // TODO: check backend/ test data if having this
+        queryType: 'byFilter',
         batchId: batchId,
         page: 1 || page,
         limit: limit || pageSize,

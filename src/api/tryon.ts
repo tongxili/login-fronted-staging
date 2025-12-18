@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getApiUrl } from '../config/api';
 import { getAccessToken } from '../utils/auth';
+import { Test } from 'vitest';
 
 // 创建 axios 实例用于试穿服务（第三方 API，不通过 proxy）
 const axiosInstance = axios.create({
@@ -57,6 +58,7 @@ export type TestHistoryItem = {
   modelId?: string;
 };
 
+// backend response for a batch
 export type TestHistoryBatch = {
   _batchId: string;
   batchName: string;
@@ -72,17 +74,17 @@ export type TestHistoryBatch = {
   successRate: number;
 }
 
-export type TestHistoryQuery = {
+// batch query and response data type
+export type BatchedTestHistoryQuery = {
   queryType: 'all' | 'byFilter';
-  taskId?: string;
+  // filter (TODO: implement in batchHistory filter)
+  batchId?: string;
   modelId?: string;
-  startTime?: string;
-  endTime?: string;
   page?: number;
   limit?: number;
-};
+}
 
-export type QueryTestHistoryResponse = {
+export type QueryBatchedTestHistoryResponse = {
   success: boolean;
   data: TestHistoryBatch[];
   pagination?: {
@@ -96,7 +98,33 @@ export type QueryTestHistoryResponse = {
   };
 };
 
-export type TestHistoryResponse = { // TODO: check references
+export type TestHistoryQuery = {
+  // all: send batch information | byFilter: send a certain batch
+  queryType: 'all' | 'byFilter' ;
+  batchId?: string;
+  taskId?: string;
+  modelId?: string;
+  startTime?: string;
+  endTime?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type QueryTestHistoryResponse = {
+  success: boolean;
+  data: TestHistoryItem[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  queryInfo: {
+    queryType: string;
+  };
+};
+
+export type TestHistoryResponse = {
   success: boolean;
   data: TestHistoryItem[];
   pagination: {
@@ -112,6 +140,9 @@ export type TestResult = {
   clothingImage: string;
   generatedResult?: string;
   status: string;
+  batchName: string;
+  prompt?: string;
+  provider?: string;
   taskId?: string;
   executionTime?: number;
 };
@@ -211,7 +242,26 @@ export const tryonApi = {
     }
   },
 
-  // 统一查询接口 > TODO: return query in batches (backend)
+  // queryTestBatchHistory => query batch endpoint (TODO backend)
+  // include batchId in query
+  async queryTestBatchHistory(
+    query: BatchedTestHistoryQuery
+  ): Promise<QueryBatchedTestHistoryResponse> {
+    try{
+      const response = await saveTestResultsAxiosInstance.post(
+        '/v1/auth/test-history/query-batch',
+        query
+      ); 
+      return response.data;
+    } catch(error){
+      console.error('Failed to query test batch history:', error);
+      throw error;
+    }
+  },
+
+  // 统一查询接口 
+  // batchQuery => all the batch
+  // batchIdQuery => all the items in a batch
   async queryTestHistory(
     query: TestHistoryQuery
   ): Promise<QueryTestHistoryResponse> {
@@ -227,13 +277,15 @@ export const tryonApi = {
     }
   },
 
-  // 保存测试结果 > TODO: save as batches (backend)
+  // Save test history > TODO: save as batches (backend)
+  // saveBatchResults => also on other frontend
+  // rn: send as-is // group on frontend by batchName -> send to backend
   saveTestResults: async (results: TestResult[]): Promise<void> => {
     try {
-      // 获取认证 token
+      // Get authentication token
       const token = getAccessToken();
       if (!token) {
-        throw new Error('未找到认证 token，请先登录');
+        throw new Error('Authentication token not found, please log in first');
       }
 
       await saveTestResultsAxiosInstance.post(
@@ -246,12 +298,12 @@ export const tryonApi = {
         }
       );
     } catch (error) {
-      console.error('保存测试结果失败:', error);
+      console.error('Failed to save test results:', error);
       throw error;
     }
   },
 
-  // 更新测试结果分数 > TODO: update item score and batch score (in backend?)
+  // Update test result score > TODO: update item score and batch score (in backend?)
   updateScore: async (
     taskId: string,
     score: number
@@ -280,8 +332,8 @@ export const tryonApi = {
     }
   },
 
-  // 批量删除测试结果 
-  // TODO: delete task and the task in batch view (backend? useful for all deletion-related ops)
+  // Delete test results by task IDs
+  // TODO: delete task and the task in batch view (backend or frontend?)
   deleteTestResults: async (
     taskIds: string[]
   ): Promise<{ deletedCount: number; taskIds: string[] }> => {
@@ -335,7 +387,7 @@ export const tryonApi = {
     }
   },
 
-  // 按时间范围获取测试结果 > TODO: in batch view
+  // 按时间范围获取测试结果
   getTestResultsByTimeRange: async (
     startTime: string,
     endTime: string,
